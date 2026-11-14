@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/HemanthGowda/library-management-go/internal/auth"
+	"github.com/HemanthGowda/library-management-go/internal/author"
 	"github.com/HemanthGowda/library-management-go/internal/book"
 	"github.com/HemanthGowda/library-management-go/internal/config"
 	"github.com/HemanthGowda/library-management-go/internal/db"
@@ -18,11 +19,12 @@ import (
 )
 
 type Application struct {
-	App    *fiber.App
-	Pool   *pgxpool.Pool
-	Config config.Config
-	users  user.Repository
-	books  book.Repository
+	App     *fiber.App    //Fiber HTTP application
+	Pool    *pgxpool.Pool //PostgreSQL connection pool
+	Config  config.Config
+	users   user.Repository
+	books   book.Repository
+	authors author.Repository
 }
 
 func New(ctx context.Context, cfg config.Config) (*Application, error) {
@@ -47,10 +49,12 @@ func New(ctx context.Context, cfg config.Config) (*Application, error) {
 
 	users := user.NewPostgresRepository(pool)
 	books := book.NewPostgresRepository(pool)
+	authors := author.NewPostgresRepository(pool)
 	encoder := password.Bcrypt{}
 	userService := user.NewService(users, encoder)
 	authService := auth.NewService(users, encoder, tokens)
 	bookService := book.NewService(books)
+	authorService := author.NewService(authors)
 
 	handler, err := httpserver.NewRouter(httpserver.Dependencies{
 		Ping:   pool.Ping,
@@ -58,6 +62,7 @@ func New(ctx context.Context, cfg config.Config) (*Application, error) {
 		Users:  user.NewHandler(userService),
 		Auth:   auth.NewHandler(authService),
 		Books:  book.NewHandler(bookService),
+		Author: author.NewHandler(authorService),
 	})
 	if err != nil {
 		pool.Close()
@@ -70,6 +75,7 @@ func New(ctx context.Context, cfg config.Config) (*Application, error) {
 		Config: cfg,
 		users:  users,
 		books:  books,
+		authors: authors,
 	}, nil
 }
 

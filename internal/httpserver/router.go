@@ -10,7 +10,9 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/recover"
 
 	"github.com/HemanthGowda/library-management-go/internal/auth"
+	"github.com/HemanthGowda/library-management-go/internal/author"
 	"github.com/HemanthGowda/library-management-go/internal/book"
+
 	"github.com/HemanthGowda/library-management-go/internal/domain"
 	"github.com/HemanthGowda/library-management-go/internal/httpx"
 	"github.com/HemanthGowda/library-management-go/internal/user"
@@ -23,6 +25,7 @@ type Dependencies struct {
 	Users  *user.Handler
 	Auth   *auth.Handler
 	Books  *book.Handler
+	Author *author.Handler
 }
 
 func NewRouter(deps Dependencies) (*fiber.App, error) {
@@ -55,6 +58,7 @@ func NewRouter(deps Dependencies) (*fiber.App, error) {
 	app.Post("/api/v1/auth/login", deps.Auth.Login)
 	app.Post("/api/v1/users", deps.Users.Register)
 	app.Put("/api/v1/books/:id", deps.Books.Update)
+	app.Post("/api/v1/authors", deps.Author.Register)
 	app.Use(unmatchedRoute)
 
 	return app, nil

@@ -118,7 +118,8 @@ components:
             type: string
     UpdateBookRequest:
       type: object
-      required: [title, authorName, isbn, publicationYear, totalCopies, availableCopies]
+      required:
+        [title, authorName, isbn, publicationYear, totalCopies, availableCopies]
       properties:
         title:
           type: string
@@ -170,6 +171,30 @@ components:
         updatedAt:
           type: string
           format: date-time
+    CreateAuthorRequest:
+      type: object
+      properties:
+        name: 
+          type: string
+        biography:
+          type: string
+        birth:
+          type: integer
+        nationality:
+          type: string
+    AuthorResponse:
+      type: object
+      properties:
+        name: 
+          type: string
+        biography:
+          type: string
+        birth:
+          type: integer
+        nationality:
+          type: string
+        
+
 paths:
   /api/v1/users:
     post:
@@ -295,3 +320,47 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /api/v1/authors:
+    post:
+      tags: [Authors]
+      summary: Add a new authorName
+      description: public endpoint will add a new author. Name must be unique
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAuthorRequest"
+            example:
+              name: Alice
+              biography: I am an author
+              birth: 1995
+              nationality: mexican
+    responses:
+      "201":
+        description: Author Added
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schema/AuthorResponse"  
+      "400":
+        description: Validation failed
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiError"  
+      "409":
+        description: Author already Added
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiError"
+
+    
+
+
+
+            
+
+
+
