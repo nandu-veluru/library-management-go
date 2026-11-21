@@ -99,7 +99,9 @@ func (s *Service) View(ctx context.Context, id string) (AuthorResponse, error) {
 
 func (s *Service) Search(ctx context.Context, name string, page int, limit int) (PaginatedResponse, error) {
 
-	authors, err := s.repository.SearchAuthor(ctx, name, page, limit)
+	offset := (page - 1) * limit
+	authors, err := s.repository.SearchAuthor(ctx, name, limit, offset)
+	
 	if err != nil {
 		return PaginatedResponse{}, err
 	}

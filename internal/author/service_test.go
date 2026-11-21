@@ -457,7 +457,7 @@ func (f *fakeAuthorRepo) GetByName(_ context.Context, name string) (Author, erro
 	return author, nil
 }
 
-func (f *fakeAuthorRepo) SearchAuthor(_ context.Context, searchName string, page, limit int) ([]Author, error) {
+func (f *fakeAuthorRepo) SearchAuthor(_ context.Context, searchName string, limit, offset int) ([]Author, error) {
 	authors := make([]Author, 0)
 
 	for _, author := range f.byName {
@@ -466,8 +466,16 @@ func (f *fakeAuthorRepo) SearchAuthor(_ context.Context, searchName string, page
 		}
 	}
 
-	offset := (page - 1) * limit
+
+	if offset >= len(authors) {
+		return []Author{}, nil
+	}
+	
 	end := offset + limit
+
+	if end > len(authors) {
+		end = len(authors)
+	}
 
 	return authors[offset:end], nil
 }

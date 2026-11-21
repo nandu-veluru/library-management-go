@@ -72,7 +72,7 @@ func (h *Handler) Search(c fiber.Ctx) error {
 	}
 
 	page := 1
-	limit := 10
+	limit := 20
 
 	name := c.Query("name")
 

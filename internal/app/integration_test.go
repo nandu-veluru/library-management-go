@@ -172,8 +172,8 @@ func insertAuthor(t *testing.T, name, biography string, birth int, nationality s
 	t.Helper()
 	id := uuid.NewString()
 	_, err := application.Pool.Exec(context.Background(), `
-		INSERT INTO authors (id, name, biography, birth, nationality)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO authors (id, name, biography, birth, nationality, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, '2026-11-17T13:46:46.667227Z', '2026-11-17T13:46:46.667227Z')
 	`, id, name, biography, birth, nationality)
 	require.NoError(t, err)
 	return id
@@ -211,7 +211,7 @@ func TestGetAuthorForLoggedInAdminSucceeds(t *testing.T) {
 	token := login(t, "admin@library.local", "ChangeMe123!")
 	id := insertAuthor(t, "Toshikazu Kawaguchi", "I am author of book called Before coffee gets cold", 1958, "American")
 
-	status, author := request(t, http.MethodGet, "/api/v1/authors?id="+id, token, nil)
+	status, author := request(t, http.MethodGet, "/api/v1/authors/"+id, token, nil)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, "Toshikazu Kawaguchi", author["name"])
 	require.Equal(t, "American", author["nationality"])
@@ -224,7 +224,7 @@ func TestAdminCanViewAuthor(t *testing.T) {
 
 	token := login(t, "admin@library.local", "ChangeMe123!")
 	id := insertAuthor(t, "Toshikazu Kawaguchi", "Author of Before the Coffee Gets Cold", 1958, "American")
-	status, body := request(t, http.MethodGet, "/api/v1/authors?id="+id, token, nil)
+	status, body := request(t, http.MethodGet, "/api/v1/authors/"+id, token, nil)
 
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, "Toshikazu Kawaguchi", body["name"])
@@ -236,7 +236,7 @@ func TestLibrarianCanViewAuthor(t *testing.T) {
 	token := login(t, "librarian@library.local", "LibrarianPass1")
 
 	id := insertAuthor(t, "Toshikazu Kawaguchi", "Author of Before the Coffee Gets Cold", 1958, "American")
-	status, body := request(t, http.MethodGet, "/api/v1/authors?id="+id, token, nil)
+	status, body := request(t, http.MethodGet, "/api/v1/authors/"+id, token, nil)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, "Toshikazu Kawaguchi", body["name"])
 }
@@ -275,6 +275,21 @@ func TestUnauthenticatedUserCannotSearchAuthor(t *testing.T) {
 	status, _ := request(t, http.MethodGet, "/api/v1/authors", "", nil)
 	require.Equal(t, http.StatusUnauthorized, status)
 }
+func TestSearchPageMaintainLimitedAuthors(t *testing.T) {
+	reset(t)
+	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
+
+	token := login(t, "admin@library.local", "ChangeMe123!")
+	id1 := insertAuthor(t, "palle vasu", "I am author of book called WE WERE NEVER MEANT TO BE", 1958, "American")
+
+	status, response := request(t, http.MethodGet, "/api/v1/authors?name=pa&page=1&limit=2", token, nil)
+	fmt.Print(response)
+	fmt.Print("status:", status)
+	author_list1 := response["data"]
+
+	require.EqualValues(t, validSearch(id1), author_list1)
+
+}
 func login(t *testing.T, email, rawPassword string) string {
 	t.Helper()
 	status, body := request(t, http.MethodPost, "/api/v1/auth/login", "", map[string]any{
@@ -286,7 +301,6 @@ func login(t *testing.T, email, rawPassword string) string {
 	require.NotEmpty(t, token)
 	return token
 }
-
 func request(t *testing.T, method, path, token string, payload any) (int, map[string]any) {
 	t.Helper()
 	var reader *bytes.Reader
@@ -335,5 +349,19 @@ func validAuthor() map[string]any {
 		"nationality": "American",
 		"created_at":  "0001-01-01T00:00:00Z",
 		"updated_at":  "0001-01-01T00:00:00Z",
+	}
+}
+
+func validSearch(id1 any) any {
+	return []any{
+		map[string]any{
+			"id":          id1,
+			"name":        "palle vasu",
+			"biography":   "I am author of book called WE WERE NEVER MEANT TO BE",
+			"birth":       float64(1958),
+			"nationality": "American",
+			"created_at":  "2026-11-17T19:16:46.667227+05:30",
+			"updated_at":  "2026-11-17T19:16:46.667227+05:30",
+		},
 	}
 }
