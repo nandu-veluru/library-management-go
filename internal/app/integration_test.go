@@ -291,8 +291,43 @@ func TestSearchPageMaintainLimitedAuthors(t *testing.T) {
 	require.EqualValues(t, id1, author1["id"])
 	require.EqualValues(t, response["total"], 1)
 	require.Equal(t, http.StatusOK, status)
+}
+func TestAdminCanRemoveAuthor(t *testing.T) {
+	reset(t)
+	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
+
+	token := login(t, "admin@library.local", "ChangeMe123!")
+	id := insertAuthor(t, "palle vasu", "I am author of book called WE WERE NEVER MEANT TO BE", 1958, "American")
+	status, _ := request(t, http.MethodDelete, "/api/v1/authors/"+id, token, nil)
+
+	require.Equal(t, http.StatusOK, status)
+}
+func TestLibrarianCanRemoveAuthor(t *testing.T) {
+	reset(t)
+	insertUser(t, "librarian@library.local", "LibrarianPass1", "Library Staff", "LIBRARIAN")
+
+	token := login(t, "librarian@library.local", "LibrarianPass1")
+	id := insertAuthor(t, "palle vasu", "I am author of book called WE WERE NEVER MEANT TO BE", 1958, "American")
+	status, _ := request(t, http.MethodDelete, "/api/v1/authors/"+id, token, nil)
+
+	require.Equal(t, http.StatusOK, status)
+}
+func TestMemberCannotRemoveAuthor(t *testing.T) {
+	reset(t)
+
+	id := insertAuthor(t, "palle vasu", "I am author of book called WE WERE NEVER MEANT TO BE", 1958, "American")
+	status, _ := request(t, http.MethodDelete, "/api/v1/authors/"+id, "", nil)
+	require.Equal(t, http.StatusUnauthorized, status)
 
 }
+func TestShouldRejectUnauthorizedUsersToRemoveAuthor(t *testing.T) {
+	reset(t)
+
+	id := insertAuthor(t, "palle vasu", "I am author of book called WE WERE NEVER MEANT TO BE", 1958, "American")
+	status, _ := request(t, http.MethodDelete, "/api/v1/authors/"+id, "", nil)
+	require.Equal(t, http.StatusUnauthorized, status)
+}
+
 func login(t *testing.T, email, rawPassword string) string {
 	t.Helper()
 	status, body := request(t, http.MethodPost, "/api/v1/auth/login", "", map[string]any{

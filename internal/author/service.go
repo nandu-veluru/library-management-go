@@ -101,7 +101,7 @@ func (s *Service) Search(ctx context.Context, name string, page int, limit int) 
 
 	offset := (page - 1) * limit
 	authors, err := s.repository.SearchAuthor(ctx, name, limit, offset)
-	
+
 	if err != nil {
 		return PaginatedResponse{}, err
 	}
@@ -122,6 +122,33 @@ func (s *Service) Search(ctx context.Context, name string, page int, limit int) 
 		Author: responses,
 		Total:  total,
 	}, nil
+}
+
+func (s *Service) Remove(ctx context.Context, id string) (AuthorResponse, error) {
+	_, err := s.repository.ViewAuthor(ctx, id)
+	if err == ErrNotFound {
+		return AuthorResponse{}, domain.NotFound("Author not found")
+	}
+
+	if err != nil {
+		return AuthorResponse{}, err
+	}
+
+	hasBook, err := s.repository.HasBooksAuthors(ctx, id)
+	if err != nil {
+		return AuthorResponse{}, err
+	}
+
+	if hasBook {
+		return AuthorResponse{}, domain.Conflict("Author has books, can't be removed")
+	}
+
+	deletedAuthor, err := s.repository.DeleteAuthor(ctx, id)
+	if err != nil {
+		return AuthorResponse{}, err
+	}
+
+	return toResponse(deletedAuthor), nil
 }
 
 func toResponse(author Author) AuthorResponse {

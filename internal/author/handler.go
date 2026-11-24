@@ -99,3 +99,26 @@ func (h *Handler) Search(c fiber.Ctx) error {
 
 	return httpx.WriteJSON(c, fiber.StatusOK, response)
 }
+
+func (h *Handler) Remove(c fiber.Ctx) error {
+	principal, ok := auth.PrincipalFrom(c.Context())
+
+	if !ok {
+		return domain.Unauthorized("Autentication is required")
+	}
+
+	if !principal.HasAny(user.RoleAdmin, user.RoleLibrarian) {
+		return domain.Forbidden()
+	}
+
+	id := c.Params("id")
+	response, err := h.service.Remove(c.Context(), id)
+	if err != nil {
+		return err
+	}
+
+	return httpx.WriteJSON(c, fiber.StatusOK, map[string]interface {}{
+		"Author": response.Name,
+		"message": "author deleted sucessfully",
+	})
+}

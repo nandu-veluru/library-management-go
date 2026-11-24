@@ -16,4 +16,6 @@ type Repository interface {
 	ViewAuthor(ctx context.Context, id string) (Author, error)
 	SearchAuthor(ctx context.Context, name string, limit, offset int) ([]Author, error)
 	CountAuthors(ctx context.Context, name string) (int, error)
+	HasBooksAuthors(ctx context.Context, id string) (bool, error)
+	DeleteAuthor(ctx context.Context, id string) (Author, error)
 }

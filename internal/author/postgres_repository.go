@@ -141,13 +141,49 @@ func (r *PostgresRepository) SearchAuthor(ctx context.Context, name string, limi
 
 func (r *PostgresRepository) CountAuthors(ctx context.Context, name string) (int, error) {
 
-    var count int
+	var count int
 
-    err := r.pool.QueryRow(ctx, `
+	err := r.pool.QueryRow(ctx, `
         SELECT COUNT(*)
         FROM authors
         WHERE name ILIKE $1
     `, "%"+strings.TrimSpace(name)+"%").Scan(&count)
 
-    return count, err
+	return count, err
+}
+
+func (r *PostgresRepository) HasBooksAuthors(ctx context.Context, id string) (bool, error) {
+	var exists bool
+
+	err := r.pool.QueryRow(ctx,
+		`SELECT EXISTS(
+            SELECT 1 FROM books
+            WHERE id = $1
+        )`, id,
+	).Scan(&exists)
+
+	return exists, err
+}
+
+func (r *PostgresRepository) DeleteAuthor(ctx context.Context, id string) (Author, error) {
+    var author Author
+
+    err := r.pool.QueryRow(ctx,
+        `DELETE FROM authors
+         WHERE id = $1
+         RETURNING id, name, biography, birth, nationality`,
+        id,
+    ).Scan(
+        &author.Id,
+        &author.Name,
+        &author.Biography,
+        &author.Birth,
+        &author.Nationality,
+    )
+
+    if err != nil {
+        return Author{}, err
+    }
+
+    return author, nil
 }

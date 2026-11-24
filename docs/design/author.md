@@ -280,3 +280,21 @@ PAGE : 2
     "total": 0
 }
 ```
+# Remove Author(Task 5)
+
+- Admin and librarian can remove the author
+- while removal Admin and librarian should know who is removed
+
+**Implemented URL**
+(DELETE)http://localhost:8080/api/v1/authors/+id
+
+- Author successfully deleted response
+```bash
+{
+    "Author": "ritivik",
+    "message": "author deleted sucessfully"
+}
+```
+
+
+
