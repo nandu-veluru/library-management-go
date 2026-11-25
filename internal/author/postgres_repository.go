@@ -234,4 +234,5 @@ func (r *PostgresRepository) UpdateAuthor(ctx context.Context, author Author) (A
 	}
 
 	return author, nil
+  
 }
