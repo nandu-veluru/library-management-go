@@ -212,8 +212,7 @@ func (r *PostgresRepository) UpdateAuthor(ctx context.Context, author Author) (A
 		    nationality = $5,
 		    updated_at = NOW()
 		WHERE id = $1
-		RETURNING id, name, biography, birth, nationality,
-		          created_at, updated_at
+		RETURNING id, name, biography, birth, nationality, created_at, updated_at
 	`,
 		author.Id,
 		author.Name,
