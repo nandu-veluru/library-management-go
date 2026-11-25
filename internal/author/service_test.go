@@ -460,6 +460,126 @@ func TestRejectsUnkownAuthors(t *testing.T) {
 	require.Equal(t, domain.KindNotFound, domainErr.Kind)
 	require.Contains(t, domainErr.Message, "Author not found")
 }
+func TestUpdateAuthorWithValidDetails(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	author, _ := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "mitch albom",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       1958,
+		Nationality: "American",
+	})
+
+	updatedAuthor := CreateAuthorRequest{
+		Name:        "mitch albom",
+		Biography:   "I am author of book called Tuesdays with morrie and for one more day",
+		Birth:       1958,
+		Nationality: "American",
+	}
+
+	response, err := service.Update(context.Background(), author.Id, updatedAuthor)
+
+	require.NoError(t, err)
+	require.Equal(t, "mitch albom", response.Name)
+	require.Equal(t, "I am author of book called Tuesdays with morrie and for one more day", response.Biography)
+	require.Equal(t, 1958, response.Birth)
+	require.Equal(t, "American", response.Nationality)
+}
+func TestUpdateAuthorNotFound(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	updatedAuthor := CreateAuthorRequest{
+		Name:        "chota bheem",
+		Biography:   "indian author",
+		Birth:       1990,
+		Nationality: "Indian",
+	}
+
+	_, err := service.Update(context.Background(), "unknown-id", updatedAuthor)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Author not found")
+}
+func TestAcceptAuthorDetailsTrimSpaces(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	author, _ := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "mitch albom",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       1958,
+		Nationality: "American",
+	})
+
+	updatedAuthor := CreateAuthorRequest{
+		Name:        "    mitch albom",
+		Biography:   "   I am author of book called Tuesdays with morrie and for one more day    ",
+		Birth:       1958,
+		Nationality: "American    ",
+	}
+
+	response, err := service.Update(context.Background(), author.Id, updatedAuthor)
+
+	require.NoError(t, err)
+	require.Equal(t, "mitch albom", response.Name)
+	require.Equal(t, "I am author of book called Tuesdays with morrie and for one more day", response.Biography)
+	require.Equal(t, 1958, response.Birth)
+	require.Equal(t, "American", response.Nationality)
+}
+func TestAccepctsEmptyDetails(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	author, _ := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "mitch albom",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       1958,
+		Nationality: "American",
+	})
+
+	updatedAuthor := CreateAuthorRequest{
+		Name:        "    mitch albom",
+		Biography:   " ",
+		Birth:       1958,
+		Nationality: " ",
+	}
+
+	response, err := service.Update(context.Background(), author.Id, updatedAuthor)
+
+	require.NoError(t, err)
+	require.Equal(t, "mitch albom", response.Name)
+	require.Equal(t, "", response.Biography)
+	require.Equal(t, 1958, response.Birth)
+	require.Equal(t, "", response.Nationality)
+
+}
+func TestRejectsUpdateEmptyName(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	author, _ := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "mitch albom",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       1958,
+		Nationality: "American",
+	})
+
+	updatedAuthor := CreateAuthorRequest{
+		Name:        " ",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       1958,
+		Nationality: "American",
+	}
+
+	_, err := service.Update(context.Background(), author.Id, updatedAuthor)
+
+	var domainErr *domain.Error
+	require.ErrorAs(t, err, &domainErr)
+	require.Equal(t, len(domainErr.Violations), 1)
+	require.Equal(t, domainErr.Message, "Request validation failed")
+}
 
 type fakeAuthorRepo struct {
 	byName map[string]Author
@@ -544,6 +664,26 @@ func (f *fakeAuthorRepo) DeleteAuthor(_ context.Context, id string) (Author, err
 	for name, author := range f.byName {
 		if author.Id == id {
 			delete(f.byName, name)
+			return author, nil
+		}
+	}
+	return Author{}, ErrNotFound
+}
+
+func (f *fakeAuthorRepo) HasName(_ context.Context, id string, name string) (bool, error) {
+	for _, author := range f.byName {
+		if author.Name == name && author.Id != id {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (f *fakeAuthorRepo) UpdateAuthor(_ context.Context, author Author) (Author, error) {
+	for name, a := range f.byName {
+		if a.Id == author.Id {
+			delete(f.byName, name)
+			f.byName[author.Name] = author
 			return author, nil
 		}
 	}

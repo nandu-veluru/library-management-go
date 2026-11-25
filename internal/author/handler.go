@@ -9,6 +9,7 @@ import (
 	"github.com/HemanthGowda/library-management-go/internal/user"
 
 	"strconv"
+	"strings"
 )
 
 type Handler struct {
@@ -117,8 +118,35 @@ func (h *Handler) Remove(c fiber.Ctx) error {
 		return err
 	}
 
-	return httpx.WriteJSON(c, fiber.StatusOK, map[string]interface {}{
-		"Author": response.Name,
+	return httpx.WriteJSON(c, fiber.StatusOK, map[string]interface{}{
+		"Author":  response.Name,
 		"message": "author deleted sucessfully",
 	})
+}
+func (h *Handler) Update(c fiber.Ctx) error {
+
+	principal, ok := auth.PrincipalFrom(c.Context())
+
+	if !ok {
+		return domain.Unauthorized("Authentication is required")
+	}
+
+	if !principal.HasAny(user.RoleAdmin, user.RoleLibrarian) {
+		return domain.Forbidden()
+	}
+
+	id := strings.TrimSpace(c.Params("id"))
+	var request CreateAuthorRequest
+
+	if err := httpx.Decode(c, &request); err != nil {
+		return err
+	}
+
+	response, err := h.service.Update(c.Context(), id, request)
+
+	if err != nil {
+		return err
+	}
+
+	return httpx.WriteJSON(c, fiber.StatusOK, response)
 }

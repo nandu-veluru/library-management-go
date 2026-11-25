@@ -166,24 +166,104 @@ func (r *PostgresRepository) HasBooksAuthors(ctx context.Context, id string) (bo
 }
 
 func (r *PostgresRepository) DeleteAuthor(ctx context.Context, id string) (Author, error) {
-    var author Author
+	var author Author
 
-    err := r.pool.QueryRow(ctx,
-        `DELETE FROM authors
+	err := r.pool.QueryRow(ctx,
+		`DELETE FROM authors
          WHERE id = $1
          RETURNING id, name, biography, birth, nationality`,
-        id,
-    ).Scan(
-        &author.Id,
-        &author.Name,
-        &author.Biography,
-        &author.Birth,
-        &author.Nationality,
-    )
+		id,
+	).Scan(
+		&author.Id,
+		&author.Name,
+		&author.Biography,
+		&author.Birth,
+		&author.Nationality,
+	)
 
-    if err != nil {
-        return Author{}, err
-    }
+	if err != nil {
+		return Author{}, err
+	}
 
-    return author, nil
+	return author, nil
+}
+
+func (r *PostgresRepository) GetAuthorById(ctx context.Context, id string) (Author, error) {
+	if _, err := uuid.Parse(id); err != nil {
+		return Author{}, ErrNotFound
+	}
+
+	var author Author
+
+	query := `
+		SELECT id, name, biography, birth, nationality,
+		       created_at, updated_at
+		FROM authors
+		WHERE id = $1
+	`
+
+	err := r.pool.QueryRow(ctx, query, id).Scan(
+		&author.Id,
+		&author.Name,
+		&author.Biography,
+		&author.Birth,
+		&author.Nationality,
+		&author.CreatedAt,
+		&author.UpdatedAt,
+	)
+
+	if err != nil {
+		return Author{}, err
+	}
+
+	return author, nil
+}
+
+func (r *PostgresRepository) HasName(ctx context.Context, id string, name string) (bool, error) {
+	var exists bool
+
+	err := r.pool.QueryRow(ctx,
+		`SELECT EXISTS(
+			SELECT 1 FROM authors
+			WHERE name = $1 AND id != $2
+		)`,
+		name, id,
+	).Scan(&exists)
+
+	return exists, err
+}
+
+func (r *PostgresRepository) UpdateAuthor(ctx context.Context, author Author) (Author, error) {
+	
+	err := r.pool.QueryRow(ctx, `
+		UPDATE authors
+		SET name = $2,
+		    biography = $3,
+		    birth = $4,
+		    nationality = $5,
+		    updated_at = NOW()
+		WHERE id = $1
+		RETURNING id, name, biography, birth, nationality,
+		          created_at, updated_at
+	`,
+		author.Id,
+		author.Name,
+		author.Biography,
+		author.Birth,
+		author.Nationality,
+	).Scan(
+		&author.Id,
+		&author.Name,
+		&author.Biography,
+		&author.Birth,
+		&author.Nationality,
+		&author.CreatedAt,
+		&author.UpdatedAt,
+	)
+
+	if err != nil {
+		return Author{}, err
+	}
+
+	return author, nil
 }
