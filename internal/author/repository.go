@@ -18,4 +18,6 @@ type Repository interface {
 	CountAuthors(ctx context.Context, name string) (int, error)
 	HasBooksAuthors(ctx context.Context, id string) (bool, error)
 	DeleteAuthor(ctx context.Context, id string) (Author, error)
+	HasName(ctx context.Context, id string, name string) (bool, error)
+	UpdateAuthor(ctx context.Context, author Author) (Author, error)
 }

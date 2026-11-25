@@ -150,6 +150,56 @@ func (s *Service) Remove(ctx context.Context, id string) (AuthorResponse, error)
 
 	return toResponse(deletedAuthor), nil
 }
+func (s *Service) Update(ctx context.Context, id string, request CreateAuthorRequest) (AuthorResponse, error) {
+
+	if violations := validateAuthor(
+		strings.TrimSpace(request.Name), strings.TrimSpace(request.Biography), request.Birth, strings.TrimSpace(request.Nationality)); len(violations) > 0 {
+		return AuthorResponse{}, domain.ValidationFailed(violations)
+	}
+
+	author, err := s.repository.ViewAuthor(ctx, id)
+
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return AuthorResponse{}, domain.NotFound("Author not found: " + id)
+		}
+		return AuthorResponse{}, err
+	}
+
+	name := strings.TrimSpace(request.Name)
+
+	exists, err := s.repository.HasName(ctx, id, name)
+
+	if err != nil {
+		return AuthorResponse{}, err
+	}
+
+	if exists {
+		return AuthorResponse{}, domain.Conflict("Author already exists")
+	}
+
+	author.Name = name
+	author.Biography = strings.TrimSpace(request.Biography)
+	author.Birth = request.Birth
+	author.Nationality = strings.TrimSpace(request.Nationality)
+	author.UpdatedAt = time.Now()
+
+	updated, err := s.repository.UpdateAuthor(ctx, author)
+
+	if errors.Is(err, ErrNotFound) {
+		return AuthorResponse{}, domain.NotFound("Author not found: " + id)
+	}
+
+	if errors.Is(err, ErrDuplicate) {
+		return AuthorResponse{}, domain.Conflict("Author already exists")
+	}
+
+	if err != nil {
+		return AuthorResponse{}, err
+	}
+
+	return toResponse(updated), nil
+}
 
 func toResponse(author Author) AuthorResponse {
 	return AuthorResponse{

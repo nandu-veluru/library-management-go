@@ -418,6 +418,35 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/ApiError"
+    put:
+      tags: [Authors]
+      summary: update authors by the id
+      description: public endpoint will update existing author 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthorResponse"
+            example:
+              name: Alice
+              biography: I am an author
+              birth: 1995
+              nationality: mexican
+      responses:
+      "201":
+        description: Author updated successfull
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schema/AuthorResponse"
+      "400":
+        description: Validation failed
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiError"
+
 
       
      

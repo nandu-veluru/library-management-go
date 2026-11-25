@@ -1,32 +1,38 @@
 # Add Author(TASK 1)
+
 - path: internal/author
 
 ## Implementations
 
 ## Author
+
 - Id(Primary key), Name, Biography, Year of Birth, Nationality
 
 ## Create Author Request
+
 - Name (required) (After trimming spaces the charaters should be in between 1 to 160)
 - Biography (optional) (when present, is at most 4,000 characters.)
 - Year of birth (optional) (when present, is from 1 through the current calendar year)
 - Nationality (optional) (when present, is at most 80 characters)
 
 ## Service
+
 - Register Author With Valid details
 
 ## Testing
+
 - Tested upon successful registration, duplicate name, Invalid Author details
 
 ## Database
+
 - insert doctor details
 - check author existing by name
 
 ## API Request
 
-**Implemented URL** 
+**Implemented URL**
 
- (POST)http://localhost:8080/api/v1/author 
+(POST)http://localhost:8080/api/v1/author
 
 **Login**
 
@@ -88,9 +94,10 @@ curl -s -X POST http://localhost:8080/api/v1/author \
     "path": "/api/v1/author"
 }
 ```
+
 # View Author(TASK 2)
 
-- admin, librarian and member can view the author details through id 
+- admin, librarian and member can view the author details through id
 
 **Implemented URL**
 
@@ -135,6 +142,7 @@ curl -s -X POST http://localhost:8080/api/v1/author \
     "path": "/api/v1/authors"
 }
 ```
+
 # search Author(Task 3)
 
 - Admin, librarian and member can search author through name
@@ -144,9 +152,11 @@ curl -s -X POST http://localhost:8080/api/v1/author \
 **Implemented URL**
 
 (GET)http://localhost:8080/api/v1/authors?name=&page=&limit=
-- can provide required limit and page number 
+
+- can provide required limit and page number
 
 **Search the existing Authors**
+
 - A name filter matches authors whose name contains the given text, ignoring letter case
 
 (GET)http://localhost:8080/api/v1/authors?name=pa&page=1&limit=2
@@ -178,9 +188,11 @@ PAGE : 1
     "total": 3
 }
 ```
+
 (GET)http://localhost:8080/api/v1/authors?name=pa&page=2&limit=2
 LIMIT : 2
 PAGE : 2
+
 ```bash
 {
     "data": [
@@ -270,6 +282,7 @@ PAGE : 2
     "total": 7
 }
 ```
+
 - When nothing matches, the result is an empty page.
 
 (GET)http://localhost:8080/api/v1/authors?name=xy&page=1&limit=2
@@ -280,6 +293,56 @@ PAGE : 2
     "total": 0
 }
 ```
+
+# update Author(Task 4)
+
+- Admin and librarian can update the existing author
+- Renaming an author to a name another author already has is refused
+- unauthorized members cant be updated
+
+**Implemented URL**
+
+(PUT)http://localhost:8080/api/v1/authors/+id
+
+- author update successfull
+
+- body
+
+```bash
+{
+    "name": "Eric",
+    "biography": "Indian writer, novelist and lycrist",
+    "birth": 1906,
+    "nationality": "Indian"
+}
+```
+
+- response
+
+```bash
+{
+    "id": "922227ac-6406-455e-bdef-a0b305a672a1",
+    "name": "Eric",
+    "biography": "Indian writer, novelist and lycrist",
+    "birth": 1906,
+    "nationality": "Indian",
+    "created_at": "2026-11-17T06:54:44.475172Z",
+    "updated_at": "2026-11-25T06:36:54.572847Z"
+}
+```
+
+- trying to update existing author name
+
+```bash
+{
+    "timestamp": "2026-11-25T06:45:29.350672899Z",
+    "status": 409,
+    "error": "Conflict",
+    "message": "Author already exists",
+    "path": "/api/v1/authors/922227ac-6406-455e-bdef-a0b305a672a1"
+}
+```
+
 # Remove Author(Task 5)
 
 - Admin and librarian can remove the author
@@ -295,6 +358,3 @@ PAGE : 2
     "message": "author deleted sucessfully"
 }
 ```
-
-
-
