@@ -188,37 +188,6 @@ func (r *PostgresRepository) DeleteAuthor(ctx context.Context, id string) (Autho
 	return author, nil
 }
 
-func (r *PostgresRepository) GetAuthorById(ctx context.Context, id string) (Author, error) {
-	if _, err := uuid.Parse(id); err != nil {
-		return Author{}, ErrNotFound
-	}
-
-	var author Author
-
-	query := `
-		SELECT id, name, biography, birth, nationality,
-		       created_at, updated_at
-		FROM authors
-		WHERE id = $1
-	`
-
-	err := r.pool.QueryRow(ctx, query, id).Scan(
-		&author.Id,
-		&author.Name,
-		&author.Biography,
-		&author.Birth,
-		&author.Nationality,
-		&author.CreatedAt,
-		&author.UpdatedAt,
-	)
-
-	if err != nil {
-		return Author{}, err
-	}
-
-	return author, nil
-}
-
 func (r *PostgresRepository) HasName(ctx context.Context, id string, name string) (bool, error) {
 	var exists bool
 
@@ -234,7 +203,7 @@ func (r *PostgresRepository) HasName(ctx context.Context, id string, name string
 }
 
 func (r *PostgresRepository) UpdateAuthor(ctx context.Context, author Author) (Author, error) {
-	
+
 	err := r.pool.QueryRow(ctx, `
 		UPDATE authors
 		SET name = $2,
