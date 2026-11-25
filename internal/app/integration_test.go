@@ -383,7 +383,39 @@ func TestUpdateSuccessByLibrarian(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, status)
 }
+func TestRejectsForMemberToUpdate(t *testing.T) {
+	reset(t)
+	insertUser(t, "member@library.local", "MemberPass1", "Library Member", "MEMBER")
 
+	token := login(t, "member@library.local", "MemberPass1")
+	id := insertAuthor(t, "palle vasu", "I am author of book called WE WERE NEVER MEANT TO BE", 1958, "American")
+	update := map[string]any{
+		"name":        "palle vasu",
+		"biography":   "I am author & novelist",
+		"birth":       1990,
+		"nationality": "indian",
+	}
+	status, _ := request(t, http.MethodPut, "/api/v1/authors/"+id, token, update)
+	require.Equal(t, http.StatusForbidden, status)
+}
+func TestRejectsUpdateForUnknownAuthor(t *testing.T) {
+	reset(t)
+
+	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
+	token := login(t, "admin@library.local", "ChangeMe123!")
+	id := insertAuthor(t, "palle vasu", "I am author of book called WE WERE NEVER MEANT TO BE", 1958, "American")
+
+	update := map[string]any{
+		"name":        "kiran",
+		"biography":   "I am author & novelist",
+		"birth":       1990,
+		"nationality": "mexican",
+	}
+
+	status, _ := request(t, http.MethodPut, "/api/v1/doctors/"+id, token, update)
+
+	require.Equal(t, http.StatusNotFound, status)
+}
 func TestRejectsUpdateForUnauthorizedMembers(t *testing.T) {
 	reset(t)
 
